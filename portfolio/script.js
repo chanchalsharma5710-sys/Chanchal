@@ -1,26 +1,26 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // --- Theme Toggle Logic ---
-    const themeToggleBtn = document.getElementById('theme-toggle');
-    const themeIcon = themeToggleBtn.querySelector('i');
-    const htmlElement = document.documentElement;
 
-    // Check local storage for theme preference
-    const savedTheme = localStorage.getItem('portfolio-theme');
+    // 1. Theme Toggle Logic
+    const themeToggleBtn = document.getElementById('theme-toggle');
+    const htmlElement = document.documentElement;
+    const themeIcon = themeToggleBtn.querySelector('i');
+
+    // Check for saved theme preference or OS default
+    const savedTheme = localStorage.getItem('theme');
     if (savedTheme) {
         htmlElement.setAttribute('data-theme', savedTheme);
         updateThemeIcon(savedTheme);
-    } else {
-        // Default to dark theme if no preference
+    } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
         htmlElement.setAttribute('data-theme', 'dark');
         updateThemeIcon('dark');
     }
 
     themeToggleBtn.addEventListener('click', () => {
         const currentTheme = htmlElement.getAttribute('data-theme');
-        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
         
         htmlElement.setAttribute('data-theme', newTheme);
-        localStorage.setItem('portfolio-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
         updateThemeIcon(newTheme);
     });
 
@@ -34,87 +34,46 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- Mobile Menu Toggle ---
-    const hamburger = document.querySelector('.hamburger');
-    const navLinks = document.querySelector('.nav-links');
-    const navLinksItems = document.querySelectorAll('.nav-links li');
+    // 2. Smooth Scrolling for Navigation Links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href');
+            if(targetId === '#') return;
 
-    hamburger.addEventListener('click', () => {
-        // Toggle Nav
-        navLinks.classList.toggle('nav-active');
-
-        // Burger Animation
-        hamburger.classList.toggle('toggle');
-    });
-
-    // Close mobile menu when a link is clicked
-    navLinksItems.forEach(item => {
-        item.addEventListener('click', () => {
-            if (navLinks.classList.contains('nav-active')) {
-                navLinks.classList.remove('nav-active');
-                hamburger.classList.remove('toggle');
+            const targetElement = document.querySelector(targetId);
+            if (targetElement) {
+                const headerOffset = 70; // Height of fixed header
+                const elementPosition = targetElement.getBoundingClientRect().top;
+                const offsetPosition = elementPosition + window.scrollY - headerOffset;
+  
+                window.scrollTo({
+                    top: offsetPosition,
+                    behavior: 'smooth'
+                });
             }
         });
     });
 
-    // --- Scroll Animations (Intersection Observer) ---
-    const faders = document.querySelectorAll('.fade-in');
-
-    const appearOptions = {
-        threshold: 0.15,
-        rootMargin: "0px 0px -50px 0px"
+    // 3. Fade-In Animation Observer
+    const observerOptions = {
+        root: null,
+        rootMargin: '0px',
+        threshold: 0.15
     };
 
-    const appearOnScroll = new IntersectionObserver(function(entries, observer) {
+    const observer = new IntersectionObserver((entries, observer) => {
         entries.forEach(entry => {
-            if (!entry.isIntersecting) {
-                return;
-            } else {
-                entry.target.classList.add('appear');
-                observer.unobserve(entry.target);
+            if (entry.isIntersecting) {
+                entry.target.classList.add('is-visible');
+                observer.unobserve(entry.target); // Stop observing once it's visible
             }
         });
-    }, appearOptions);
+    }, observerOptions);
 
-    faders.forEach(fader => {
-        appearOnScroll.observe(fader);
+    const fadeElements = document.querySelectorAll('.fade-in-section');
+    fadeElements.forEach(el => {
+        observer.observe(el);
     });
 
-    // --- Contact Form Submission Mockup ---
-    const contactForm = document.getElementById('contact-form');
-    
-    if (contactForm) {
-        contactForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            
-            // Get form values
-            const name = document.getElementById('name').value;
-            const email = document.getElementById('email').value;
-            
-            // Mock submission feedback
-            const submitBtn = contactForm.querySelector('button[type="submit"]');
-            const originalText = submitBtn.innerHTML;
-            
-            submitBtn.innerHTML = '<i class="fas fa-check"></i> Message Sent!';
-            submitBtn.style.backgroundColor = '#10b981'; // Green color
-            
-            contactForm.reset();
-            
-            // Reset button after 3 seconds
-            setTimeout(() => {
-                submitBtn.innerHTML = originalText;
-                submitBtn.style.backgroundColor = '';
-            }, 3000);
-        });
-    }
-
-    // --- Navbar Sticky Shadow Effect ---
-    const navbar = document.querySelector('.navbar');
-    window.addEventListener('scroll', () => {
-        if (window.scrollY > 50) {
-            navbar.style.boxShadow = 'var(--shadow)';
-        } else {
-            navbar.style.boxShadow = 'none';
-        }
-    });
 });
